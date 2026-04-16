@@ -478,9 +478,9 @@ body {
         </table>
       </div>
       <div class="card">
-        <div class="card-title">สัดส่วนรายจ่ายจริง vs กอง</div>
+        <div class="card-title">แผน vs จริง — แต่ละกอง (บาท)</div>
         <div class="chart-wrap" style="height:220px">
-          <canvas id="chart-fund-pie"></canvas>
+          <canvas id="chart-fund-bar"></canvas>
         </div>
       </div>
     </div>
@@ -762,17 +762,63 @@ function renderOverview() {
     byFund[fund] = (byFund[fund] || 0) + r.amount;
   });
 
-  // Pie: fund
-  destroyChart('chart-fund-pie');
-  const fundEntries = Object.entries(byFund).sort((a,b) => b[1]-a[1]);
-  const fundColors = ['#c8893a','#e74c3c','#9b59b6','#3498db','#2ecc71','#7f8c8d'];
-  charts['chart-fund-pie'] = new Chart(document.getElementById('chart-fund-pie'), {
-    type: 'doughnut',
+  // Bar: plan vs actual per fund
+  destroyChart('chart-fund-bar');
+  const fundLabels = FUND_ALLOC.map(f => f.name);
+  const fundPlan   = FUND_ALLOC.map(f => Math.round(streamB * f.pct));
+  const fundActual = FUND_ALLOC.map(f => Math.round(byFund[f.name] || 0));
+  charts['chart-fund-bar'] = new Chart(document.getElementById('chart-fund-bar'), {
+    type: 'bar',
     data: {
-      labels: fundEntries.map(e => e[0]),
-      datasets: [{ data: fundEntries.map(e => e[1]), backgroundColor: fundColors, borderWidth: 0, hoverOffset: 6 }]
+      labels: fundLabels,
+      datasets: [
+        {
+          label: 'แผน',
+          data: fundPlan,
+          backgroundColor: 'rgba(200,137,58,0.35)',
+          borderColor: '#c8893a',
+          borderWidth: 1,
+          borderRadius: 4,
+        },
+        {
+          label: 'จริง',
+          data: fundActual,
+          backgroundColor: fundActual.map((v, i) =>
+            fundPlan[i] === 0 ? 'rgba(100,100,100,0.5)' :
+            v > fundPlan[i] ? 'rgba(231,76,60,0.75)' : 'rgba(46,204,113,0.75)'
+          ),
+          borderColor: fundActual.map((v, i) =>
+            fundPlan[i] === 0 ? '#555' :
+            v > fundPlan[i] ? '#e74c3c' : '#2ecc71'
+          ),
+          borderWidth: 1,
+          borderRadius: 4,
+        }
+      ]
     },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { color: '#888', font: { size: 11 }, padding: 12, boxWidth: 10 } } } }
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: '#888', font: { size: 11 }, padding: 12, boxWidth: 10 } },
+        tooltip: {
+          callbacks: {
+            afterLabel: function(ctx) {
+              if (ctx.datasetIndex === 1) {
+                const plan = fundPlan[ctx.dataIndex];
+                const actual = ctx.raw;
+                if (plan === 0) return '';
+                const diff = actual - plan;
+                return diff > 0 ? '▲ เกิน ' + diff.toLocaleString() : '▼ เหลือ ' + Math.abs(diff).toLocaleString();
+              }
+            }
+          }
+        }
+      },
+      scales: {
+        x: { ticks: { color: '#888', font: { size: 10 } }, grid: { display: false } },
+        y: { ticks: { color: '#666', font: { size: 10 } }, grid: { color: '#1a1a1a' } }
+      }
+    }
   });
 
   // Cat amounts
