@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>5MT Personal Finance</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:        #0d0d0d;
+  --surface:   #161616;
+  --surface2:  #1e1e1e;
+  --border:    #2a2a2a;
+  --gold:      #c8893a;
+  --gold-dim:  #8a5e28;
+  --text:      #f0ede6;
+  --text-dim:  #888;
+  --text-muted:#444;
+  --green:     #2ecc71;
+  --red:       #e74c3c;
+  --blue:      #3a7bd5;
+  --r:         8px;
+
+  --cat-food:   #e67e22;
+  --cat-trans:  #3498db;
+  --cat-health: #2ecc71;
+  --cat-beauty: #e91e63;
+  --cat-ent:    #9b59b6;
+  --cat-shop:   #1abc9c;
+  --cat-travel: #f39c12;
+  --cat-family: #e74c3c;
+  --cat-sub:    #2980b9;
+  --cat-tax:    #7f8c8d;
+  --cat-work:   #c8893a;
+  --cat-misc:   #555;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'IBM Plex Sans Thai', sans-serif;
+  font-size: 14px;
+  min-height: 100vh;
+}
+
+/* ── TOP BAR ── */
+.topbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.brand-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--gold);
+  box-shadow: 0 0 8px var(--gold);
+}
+.brand-name {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: var(--gold);
+  text-transform: uppercase;
+}
+.last-updated {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* ── TABS ── */
+.tabs {
+  display: flex;
+  gap: 2px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 20px;
+  overflow-x: auto;
+}
+.tab {
+  padding: 12px 20px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  transition: all .2s;
+  user-select: none;
+}
+.tab:hover { color: var(--text-dim); }
+.tab.active {
+  color: var(--gold);
+  border-bottom-color: var(--gold);
+}
+
+/* ── DATE FILTER ── */
+.filter-bar {
+  padding: 12px 20px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.filter-label { color: var(--text-dim); font-size: 12px; }
+.filter-btn {
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all .15s;
+}
+.filter-btn:hover { border-color: var(--gold-dim); color: var(--text); }
+.filter-btn.active { background: var(--gold); border-color: var(--gold); color: #000; font-weight: 600; }
+.filter-sep { color: var(--text-muted); }
+.custom-dates {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.date-input {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: 'IBM Plex Mono', monospace;
+  width: 120px;
+}
+.date-input:focus { outline: none; border-color: var(--gold); }
+
+/* ── PAGES ── */
+.page { display: none; padding: 20px; max-width: 1400px; margin: 0 auto; }
+.page.active { display: block; }
+
+/* ── LOADING ── */
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: var(--text-muted);
+  gap: 10px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+}
+.spinner {
+  width: 16px; height: 16px;
+  border: 2px solid var(--border);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── CARDS ── */
+.grid { display: grid; gap: 16px; }
+.g2 { grid-template-columns: repeat(2, 1fr); }
+.g3 { grid-template-columns: repeat(3, 1fr); }
+.g4 { grid-template-columns: repeat(4, 1fr); }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 20px;
+}
+.card-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+/* ── SCORECARDS ── */
+.score-val {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1;
+}
+.score-unit { font-size: 13px; color: var(--text-dim); margin-left: 4px; }
+.score-sub { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
+.score-green { color: var(--green); }
+.score-red   { color: var(--red); }
+
+/* ── FUND TABLE ── */
+.fund-table { width: 100%; border-collapse: collapse; }
+.fund-table th {
+  text-align: left;
+  font-size: 11px;
+  color: var(--text-muted);
+  padding: 0 0 10px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.fund-table td { padding: 8px 0; border-top: 1px solid var(--border); }
+.fund-name { font-size: 13px; }
+.fund-pct {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: right;
+}
+.fund-amt {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gold);
+  text-align: right;
+}
+.fund-bar-wrap {
+  height: 3px;
+  background: var(--border);
+  border-radius: 2px;
+  margin-top: 4px;
+}
+.fund-bar { height: 3px; border-radius: 2px; background: var(--gold); }
+
+/* ── CAT TABLE ── */
+.cat-table { width: 100%; border-collapse: collapse; }
+.cat-table th {
+  text-align: left;
+  font-size: 11px;
+  color: var(--text-muted);
+  padding: 0 8px 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.cat-table th:first-child { padding-left: 0; }
+.cat-table td {
+  padding: 9px 8px;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+  vertical-align: middle;
+}
+.cat-table td:first-child { padding-left: 0; }
+.cat-dot {
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  margin-right: 8px;
+}
+.cat-amt {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  text-align: right;
+}
+.cat-pct {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: right;
+}
+.cat-bar-wrap {
+  height: 3px;
+  background: var(--border);
+  border-radius: 2px;
+  min-width: 60px;
+}
+.cat-bar { height: 3px; border-radius: 2px; }
+
+/* ── BREAKDOWN TABLE ── */
+.breakdown-table { width: 100%; border-collapse: collapse; }
+.breakdown-table th {
+  text-align: left;
+  font-size: 11px;
+  color: var(--text-muted);
+  padding: 0 8px 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.breakdown-table tr:hover td { background: var(--surface2); }
+.breakdown-table td {
+  padding: 8px;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+}
+.breakdown-table td:first-child { border-radius: 4px 0 0 4px; }
+.breakdown-table td:last-child {
+  font-family: 'IBM Plex Mono', monospace;
+  text-align: right;
+  border-radius: 0 4px 4px 0;
+  color: var(--gold);
+}
+.rank-num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--text-muted);
+  width: 24px;
+}
+
+/* ── MONTH COMPARE ── */
+.month-grid { display: grid; gap: 1px; }
+.month-row {
+  display: grid;
+  grid-template-columns: 160px repeat(3, 1fr);
+  gap: 1px;
+}
+.month-cell {
+  padding: 8px 12px;
+  font-size: 12px;
+  font-family: 'IBM Plex Mono', monospace;
+  text-align: right;
+}
+.month-cell.label {
+  text-align: left;
+  font-family: 'IBM Plex Sans Thai', sans-serif;
+  font-size: 13px;
+}
+.month-header .month-cell {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding-bottom: 12px;
+}
+.month-row:not(.month-header) .month-cell:first-child { color: var(--text); }
+.month-row:not(.month-header) .month-cell:not(:first-child) { color: var(--text-dim); }
+.month-row.total-row .month-cell { color: var(--gold) !important; font-weight: 600; border-top: 1px solid var(--border); padding-top: 12px; }
+.higher { color: var(--red) !important; }
+.lower  { color: var(--green) !important; }
+
+/* ── TIMELINE ── */
+.timeline-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  gap: 12px;
+}
+.tl-date {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--text-muted);
+  width: 80px;
+  flex-shrink: 0;
+}
+.tl-cat { width: 28px; text-align: center; flex-shrink: 0; }
+.tl-desc { flex: 1; font-size: 13px; color: var(--text); }
+.tl-cat-tag {
+  font-size: 10px;
+  color: var(--text-muted);
+  display: block;
+}
+.tl-amt {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* ── SECTION TITLE ── */
+.section-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 16px 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ── CHART CONTAINER ── */
+.chart-wrap { position: relative; width: 100%; }
+
+/* ── EMPTY STATE ── */
+.empty {
+  text-align: center;
+  padding: 40px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 768px) {
+  .g4 { grid-template-columns: repeat(2, 1fr); }
+  .g3 { grid-template-columns: repeat(2, 1fr); }
+  .g2 { grid-template-columns: 1fr; }
+  .month-row { grid-template-columns: 120px repeat(3, 1fr); }
+  .month-cell { padding: 6px 6px; font-size: 11px; }
+  .topbar { padding: 10px 14px; }
+  .page { padding: 14px; }
+}
+@media (max-width: 480px) {
+  .g4 { grid-template-columns: 1fr 1fr; }
+  .g3 { grid-template-columns: 1fr; }
+  .score-val { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-dot"></div>
+    <span class="brand-name">5MT Finance</span>
+  </div>
+  <span class="last-updated" id="lastUpdated">กำลังโหลด...</span>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('overview', this)">📊 Overview</div>
+  <div class="tab" onclick="switchTab('breakdown', this)">📂 หมวดรายจ่าย</div>
+  <div class="tab" onclick="switchTab('timeline', this)">📅 Timeline</div>
+</div>
+
+<div class="filter-bar">
+  <span class="filter-label">ช่วงเวลา:</span>
+  <button class="filter-btn active" onclick="setFilter('month', this)">เดือนนี้</button>
+  <button class="filter-btn" onclick="setFilter('last_month', this)">เดือนที่แล้ว</button>
+  <button class="filter-btn" onclick="setFilter('3month', this)">3 เดือน</button>
+  <button class="filter-btn" onclick="setFilter('year', this)">ปีนี้</button>
+  <span class="filter-sep">|</span>
+  <div class="custom-dates">
+    <input type="date" class="date-input" id="dateFrom" onchange="setFilter('custom', null)">
+    <span class="filter-label">ถึง</span>
+    <input type="date" class="date-input" id="dateTo" onchange="setFilter('custom', null)">
+  </div>
+</div>
+
+<!-- PAGE: OVERVIEW -->
+<div class="page active" id="page-overview">
+  <div class="loading" id="loading-overview"><div class="spinner"></div> กำลังโหลดข้อมูล...</div>
+  <div id="content-overview" style="display:none">
+
+    <div class="grid g4" id="scorecards"></div>
+
+    <div class="section-title">กองเงิน 6 กอง</div>
+    <div class="grid g2">
+      <div class="card">
+        <div class="card-title">แผนแบ่งกอง (จากรายรับ Stream B)</div>
+        <table class="fund-table">
+          <thead><tr>
+            <th>กอง</th>
+            <th class="fund-pct" style="text-align:right">%</th>
+            <th class="fund-amt" style="text-align:right">ยอด (บาท)</th>
+          </tr></thead>
+          <tbody id="fund-table-body"></tbody>
+        </table>
+      </div>
+      <div class="card">
+        <div class="card-title">สัดส่วนรายจ่ายจริง vs กอง</div>
+        <div class="chart-wrap" style="height:220px">
+          <canvas id="chart-fund-pie"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title">รายจ่ายตามหมวด</div>
+    <div class="grid g2">
+      <div class="card">
+        <div class="card-title">สัดส่วนหมวด</div>
+        <div class="chart-wrap" style="height:240px">
+          <canvas id="chart-cat-pie"></canvas>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">ยอดแต่ละหมวด</div>
+        <div id="cat-list-overview"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- PAGE: BREAKDOWN -->
+<div class="page" id="page-breakdown">
+  <div class="loading" id="loading-breakdown" style="display:none"><div class="spinner"></div> กำลังโหลด...</div>
+  <div id="content-breakdown">
+
+    <div class="section-title">หนักไปกับอะไร</div>
+    <div class="grid g2">
+      <div class="card">
+        <div class="card-title">Top รายการ (Counterparty)</div>
+        <table class="breakdown-table">
+          <thead><tr>
+            <th>#</th><th>รายการ</th><th>หมวด</th><th style="text-align:right">บาท</th>
+          </tr></thead>
+          <tbody id="top-items-table"></tbody>
+        </table>
+      </div>
+      <div class="card">
+        <div class="card-title">Breakdown ตามหมวด</div>
+        <div class="chart-wrap" style="height:280px">
+          <canvas id="chart-cat-bar"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title">เปรียบเทียบ 3 เดือนล่าสุด</div>
+    <div class="card">
+      <div class="card-title">รายจ่ายตามหมวด × เดือน</div>
+      <div class="month-grid" id="month-compare-grid"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- PAGE: TIMELINE -->
+<div class="page" id="page-timeline">
+  <div class="loading" id="loading-timeline" style="display:none"><div class="spinner"></div> กำลังโหลด...</div>
+  <div id="content-timeline">
+
+    <div class="section-title">รายจ่ายรายเดือน (Stacked)</div>
+    <div class="card">
+      <div class="chart-wrap" style="height:280px">
+        <canvas id="chart-monthly-stacked"></canvas>
+      </div>
+    </div>
+
+    <div class="section-title">รายการล่าสุด</div>
+    <div class="card">
+      <div class="card-title">รายการทั้งหมดในช่วงที่เลือก</div>
+      <div id="timeline-list"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════════════════════════
+
+const SHEET_ID = '1iVjOBShXGtPmZqPcnRuClfzVbMSuCQC0lYLHLNV9R6g';
+const STREAM_B_NET = 0; // อัพเดทด้วยมือหรือดึงจาก dashboard tab
+
+const FUND_ALLOC = [
+  { name: '🏠 Fixed',    pct: 0.30 },
+  { name: '👩‍❤️‍👨 ภรรยา',  pct: 0.05 },
+  { name: '🎮 Fun',      pct: 0.15 },
+  { name: '🛡️ ฉุกเฉิน', pct: 0.20 },
+  { name: '📈 ลงทุน',    pct: 0.20 },
+  { name: '📋 ภาษี',     pct: 0.10 },
+];
+
+const FUND_MAP = {
+  'C-EXP-FOOD':'🏠 Fixed','C-EXP-TRANSPORT':'🏠 Fixed','C-EXP-HEALTH':'🏠 Fixed',
+  'C-EXP-SUBSCRIPTION':'🏠 Fixed','C-EXP-WORK':'🏠 Fixed','C-EXP-MISC':'🏠 Fixed',
+  'C-EXP-FAMILY':'👩‍❤️‍👨 ภรรยา',
+  'C-EXP-ENTERTAINMENT':'🎮 Fun','C-EXP-SHOPPING':'🎮 Fun','C-EXP-BEAUTY':'🎮 Fun',
+  'C-EXP-TRAVEL':'✈️ Travel',
+  'C-EXP-TAX':'📋 ภาษี',
+};
+
+const CAT_LABELS = {
+  'C-EXP-FOOD':'🍚 อาหาร','C-EXP-TRANSPORT':'🚗 เดินทาง','C-EXP-HEALTH':'💊 สุขภาพ',
+  'C-EXP-BEAUTY':'💇 ความงาม','C-EXP-ENTERTAINMENT':'🎮 บันเทิง','C-EXP-SHOPPING':'🛒 ช้อปปิ้ง',
+  'C-EXP-TRAVEL':'✈️ ท่องเที่ยว','C-EXP-FAMILY':'👨‍👩‍👧 ครอบครัว','C-EXP-SUBSCRIPTION':'📱 รายเดือน',
+  'C-EXP-TAX':'🧾 ภาษี','C-EXP-WORK':'💼 งาน','C-EXP-MISC':'📦 อื่นๆ',
+};
+
+const CAT_COLORS = {
+  'C-EXP-FOOD':'#e67e22','C-EXP-TRANSPORT':'#3498db','C-EXP-HEALTH':'#2ecc71',
+  'C-EXP-BEAUTY':'#e91e63','C-EXP-ENTERTAINMENT':'#9b59b6','C-EXP-SHOPPING':'#1abc9c',
+  'C-EXP-TRAVEL':'#f39c12','C-EXP-FAMILY':'#e74c3c','C-EXP-SUBSCRIPTION':'#2980b9',
+  'C-EXP-TAX':'#7f8c8d','C-EXP-WORK':'#c8893a','C-EXP-MISC':'#555555',
+};
+
+// ═══════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════
+
+let allRows = [];
+let filteredRows = [];
+let currentFilter = 'month';
+let charts = {};
+
+// ═══════════════════════════════════════════════════════════════
+// FETCH DATA
+// ═══════════════════════════════════════════════════════════════
+
+async function fetchData() {
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=ledger`;
+  try {
+    const res = await fetch(url);
+    const text = await res.text();
+    const json = JSON.parse(text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\)/)[1]);
+    const rows = json.table.rows;
+    const cols = json.table.cols.map(c => c.label);
+
+    allRows = rows.map(row => {
+      const obj = {};
+      cols.forEach((col, i) => {
+        const cell = row.c[i];
+        obj[col] = cell ? cell.v : null;
+      });
+      // parse date
+      if (obj.date && typeof obj.date === 'string') {
+        obj._date = new Date(obj.date);
+      } else if (obj.date && obj.date.v) {
+        obj._date = new Date(obj.date.v);
+      } else {
+        obj._date = obj.date ? new Date(obj.date) : null;
+      }
+      obj.amount = parseFloat(obj.amount) || 0;
+      return obj;
+    }).filter(r => r._date && !isNaN(r._date));
+
+    document.getElementById('lastUpdated').textContent =
+      'อัพเดท ' + new Date().toLocaleTimeString('th-TH', {hour:'2-digit',minute:'2-digit'});
+
+    applyFilter();
+  } catch(e) {
+    console.error(e);
+    document.getElementById('loading-overview').innerHTML =
+      '<span style="color:var(--red)">โหลดไม่ได้ — ตรวจสอบว่า Sheet เป็น Public แล้วหรือยัง</span>';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// FILTER
+// ═══════════════════════════════════════════════════════════════
+
+function setFilter(type, btn) {
+  if (btn) {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+  currentFilter = type;
+  applyFilter();
+}
+
+function applyFilter() {
+  const now = new Date();
+  let from, to;
+
+  if (currentFilter === 'month') {
+    from = new Date(now.getFullYear(), now.getMonth(), 1);
+    to   = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  } else if (currentFilter === 'last_month') {
+    from = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    to   = new Date(now.getFullYear(), now.getMonth(), 0);
+  } else if (currentFilter === '3month') {
+    from = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+    to   = now;
+  } else if (currentFilter === 'year') {
+    from = new Date(now.getFullYear(), 0, 1);
+    to   = now;
+  } else if (currentFilter === 'custom') {
+    const f = document.getElementById('dateFrom').value;
+    const t = document.getElementById('dateTo').value;
+    if (!f || !t) return;
+    from = new Date(f);
+    to   = new Date(t);
+    to.setHours(23,59,59);
+  }
+
+  filteredRows = allRows.filter(r => r._date >= from && r._date <= to);
+  renderAll();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RENDER ALL
+// ═══════════════════════════════════════════════════════════════
+
+function renderAll() {
+  renderOverview();
+  renderBreakdown();
+  renderTimeline();
+  showContent();
+}
+
+function showContent() {
+  document.getElementById('loading-overview').style.display = 'none';
+  document.getElementById('content-overview').style.display = 'block';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// OVERVIEW
+// ═══════════════════════════════════════════════════════════════
+
+function renderOverview() {
+  const total = filteredRows.reduce((s, r) => s + r.amount, 0);
+  const count = filteredRows.length;
+  const avg   = count ? total / count : 0;
+  const streamB = STREAM_B_NET;
+  const balance = streamB - total;
+
+  // Scorecards
+  document.getElementById('scorecards').innerHTML = `
+    <div class="card">
+      <div class="card-title">รายจ่ายรวม</div>
+      <div class="score-val score-red">${fmt(total)}<span class="score-unit">฿</span></div>
+      <div class="score-sub">${count} รายการ</div>
+    </div>
+    <div class="card">
+      <div class="card-title">เฉลี่ยต่อรายการ</div>
+      <div class="score-val">${fmt(avg)}<span class="score-unit">฿</span></div>
+      <div class="score-sub">per transaction</div>
+    </div>
+    <div class="card">
+      <div class="card-title">รายรับ Stream B</div>
+      <div class="score-val score-green">${fmt(streamB)}<span class="score-unit">฿</span></div>
+      <div class="score-sub">ซิงค์ทุกวัน 06:00</div>
+    </div>
+    <div class="card">
+      <div class="card-title">คงเหลือ</div>
+      <div class="score-val ${balance >= 0 ? 'score-green' : 'score-red'}">${fmt(balance)}<span class="score-unit">฿</span></div>
+      <div class="score-sub">รายรับ - รายจ่าย</div>
+    </div>
+  `;
+
+  // Fund table
+  const tbody = document.getElementById('fund-table-body');
+  tbody.innerHTML = FUND_ALLOC.map(f => {
+    const amt = streamB * f.pct;
+    return `<tr>
+      <td><div class="fund-name">${f.name}</div>
+        <div class="fund-bar-wrap"><div class="fund-bar" style="width:${f.pct*100}%"></div></div>
+      </td>
+      <td class="fund-pct">${(f.pct*100).toFixed(0)}%</td>
+      <td class="fund-amt">${fmt(amt)}</td>
+    </tr>`;
+  }).join('');
+
+  // Cat breakdown
+  const byFund = {};
+  filteredRows.forEach(r => {
+    const fund = FUND_MAP[r.category] || '📦 MISC';
+    byFund[fund] = (byFund[fund] || 0) + r.amount;
+  });
+
+  // Pie: fund
+  destroyChart('chart-fund-pie');
+  const fundEntries = Object.entries(byFund).sort((a,b) => b[1]-a[1]);
+  const fundColors = ['#c8893a','#e74c3c','#9b59b6','#3498db','#2ecc71','#7f8c8d'];
+  charts['chart-fund-pie'] = new Chart(document.getElementById('chart-fund-pie'), {
+    type: 'doughnut',
+    data: {
+      labels: fundEntries.map(e => e[0]),
+      datasets: [{ data: fundEntries.map(e => e[1]), backgroundColor: fundColors, borderWidth: 0, hoverOffset: 6 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { color: '#888', font: { size: 11 }, padding: 12, boxWidth: 10 } } } }
+  });
+
+  // Cat amounts
+  const byCat = {};
+  filteredRows.forEach(r => { byCat[r.category] = (byCat[r.category] || 0) + r.amount; });
+  const catEntries = Object.entries(byCat).sort((a,b) => b[1]-a[1]);
+
+  document.getElementById('cat-list-overview').innerHTML = `
+    <table class="cat-table">
+      <thead><tr><th>หมวด</th><th style="text-align:right">บาท</th><th style="text-align:right">%</th></tr></thead>
+      <tbody>${catEntries.map(([code, amt]) => {
+        const pct = total ? amt/total : 0;
+        const color = CAT_COLORS[code] || '#555';
+        return `<tr>
+          <td><span class="cat-dot" style="background:${color}"></span>${CAT_LABELS[code]||code}
+            <div class="cat-bar-wrap"><div class="cat-bar" style="width:${pct*100}%;background:${color}"></div></div>
+          </td>
+          <td class="cat-amt">${fmt(amt)}</td>
+          <td class="cat-pct">${(pct*100).toFixed(1)}%</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>`;
+
+  // Pie: cat
+  destroyChart('chart-cat-pie');
+  charts['chart-cat-pie'] = new Chart(document.getElementById('chart-cat-pie'), {
+    type: 'doughnut',
+    data: {
+      labels: catEntries.map(([c]) => CAT_LABELS[c]||c),
+      datasets: [{ data: catEntries.map(([,v]) => v), backgroundColor: catEntries.map(([c]) => CAT_COLORS[c]||'#555'), borderWidth: 0, hoverOffset: 6 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { color: '#888', font: { size: 11 }, padding: 10, boxWidth: 10 } } } }
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// BREAKDOWN
+// ═══════════════════════════════════════════════════════════════
+
+function renderBreakdown() {
+  const total = filteredRows.reduce((s,r) => s + r.amount, 0);
+
+  // Top items by counterparty
+  const byCP = {};
+  filteredRows.forEach(r => {
+    const key = (r.counterparty||'ไม่ระบุ') + '||' + (r.category||'');
+    if (!byCP[key]) byCP[key] = { name: r.counterparty||'ไม่ระบุ', cat: r.category, total: 0, count: 0 };
+    byCP[key].total += r.amount;
+    byCP[key].count++;
+  });
+  const topItems = Object.values(byCP).sort((a,b) => b.total-a.total).slice(0, 20);
+
+  document.getElementById('top-items-table').innerHTML = topItems.map((item, i) => `
+    <tr>
+      <td class="rank-num">${i+1}</td>
+      <td>${item.name}<span style="font-size:11px;color:var(--text-muted);margin-left:4px">(${item.count}x)</span></td>
+      <td><span style="font-size:11px;color:${CAT_COLORS[item.cat]||'#555'}">${CAT_LABELS[item.cat]||item.cat||''}</span></td>
+      <td>${fmt(item.total)}</td>
+    </tr>`).join('');
+
+  // Bar chart by category
+  const byCat = {};
+  filteredRows.forEach(r => { byCat[r.category] = (byCat[r.category]||0) + r.amount; });
+  const catEntries = Object.entries(byCat).sort((a,b) => b[1]-a[1]);
+
+  destroyChart('chart-cat-bar');
+  charts['chart-cat-bar'] = new Chart(document.getElementById('chart-cat-bar'), {
+    type: 'bar',
+    data: {
+      labels: catEntries.map(([c]) => CAT_LABELS[c]||c),
+      datasets: [{
+        data: catEntries.map(([,v]) => v),
+        backgroundColor: catEntries.map(([c]) => CAT_COLORS[c]||'#555'),
+        borderRadius: 4, borderSkipped: false
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#666', font: { size: 10 } }, grid: { color: '#222' } },
+        y: { ticks: { color: '#aaa', font: { size: 11 } }, grid: { display: false } }
+      }
+    }
+  });
+
+  // 3-month comparison
+  renderMonthCompare();
+}
+
+function renderMonthCompare() {
+  const now = new Date();
+  const months = [
+    { label: getMonthLabel(-2, now), y: now.getFullYear(), m: now.getMonth()-2 < 0 ? now.getMonth()-2+12 : now.getMonth()-2, yr: now.getMonth()-2 < 0 ? now.getFullYear()-1 : now.getFullYear() },
+    { label: getMonthLabel(-1, now), y: now.getFullYear(), m: now.getMonth()-1 < 0 ? 11 : now.getMonth()-1, yr: now.getMonth()-1 < 0 ? now.getFullYear()-1 : now.getFullYear() },
+    { label: getMonthLabel(0, now),  y: now.getFullYear(), m: now.getMonth(), yr: now.getFullYear() },
+  ];
+
+  const catTotals = {};
+  const cats = Object.keys(CAT_LABELS);
+
+  months.forEach((mo, mi) => {
+    const rows = allRows.filter(r => r._date.getFullYear() === mo.yr && r._date.getMonth() === mo.m);
+    rows.forEach(r => {
+      if (!catTotals[r.category]) catTotals[r.category] = [0,0,0];
+      catTotals[r.category][mi] += r.amount;
+    });
+  });
+
+  const activeCats = cats.filter(c => catTotals[c] && catTotals[c].some(v => v > 0));
+  const totals = [0,0,0];
+  activeCats.forEach(c => { catTotals[c].forEach((v,i) => totals[i] += v); });
+
+  const grid = document.getElementById('month-compare-grid');
+  grid.innerHTML = `
+    <div class="month-row month-header">
+      <div class="month-cell label">หมวด</div>
+      ${months.map(m => `<div class="month-cell">${m.label}</div>`).join('')}
+    </div>
+    ${activeCats.map(c => {
+      const vals = catTotals[c] || [0,0,0];
+      return `<div class="month-row">
+        <div class="month-cell label"><span style="color:${CAT_COLORS[c]||'#555'}">●</span> ${CAT_LABELS[c]||c}</div>
+        ${vals.map((v,i) => {
+          let cls = '';
+          if (i > 0 && vals[i-1] > 0) cls = v > vals[i-1] ? 'higher' : (v < vals[i-1] ? 'lower' : '');
+          return `<div class="month-cell ${cls}">${v > 0 ? fmt(v) : '—'}</div>`;
+        }).join('')}
+      </div>`;
+    }).join('')}
+    <div class="month-row total-row">
+      <div class="month-cell label">รวม</div>
+      ${totals.map(v => `<div class="month-cell">${fmt(v)}</div>`).join('')}
+    </div>
+  `;
+}
+
+function getMonthLabel(offset, now) {
+  const mn = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  const d = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+  return mn[d.getMonth()];
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TIMELINE
+// ═══════════════════════════════════════════════════════════════
+
+function renderTimeline() {
+  // Monthly stacked bar
+  const monthlyData = {};
+  const cats = new Set();
+  allRows.forEach(r => {
+    const key = r._date.getFullYear() + '-' + String(r._date.getMonth()+1).padStart(2,'0');
+    if (!monthlyData[key]) monthlyData[key] = {};
+    monthlyData[key][r.category] = (monthlyData[key][r.category]||0) + r.amount;
+    cats.add(r.category);
+  });
+
+  const sortedMonths = Object.keys(monthlyData).sort().slice(-6);
+  const catList = [...cats];
+
+  destroyChart('chart-monthly-stacked');
+  charts['chart-monthly-stacked'] = new Chart(document.getElementById('chart-monthly-stacked'), {
+    type: 'bar',
+    data: {
+      labels: sortedMonths.map(m => { const [y,mo] = m.split('-'); const mn=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.']; return mn[parseInt(mo)-1]; }),
+      datasets: catList.map(c => ({
+        label: CAT_LABELS[c]||c,
+        data: sortedMonths.map(m => monthlyData[m]?.[c] || 0),
+        backgroundColor: CAT_COLORS[c]||'#555',
+        borderRadius: 2,
+      }))
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: {
+        x: { stacked: true, ticks: { color: '#888' }, grid: { display: false } },
+        y: { stacked: true, ticks: { color: '#666', font: { size: 10 } }, grid: { color: '#1a1a1a' } }
+      },
+      plugins: { legend: { labels: { color: '#666', font: { size: 10 }, padding: 8, boxWidth: 10 } } }
+    }
+  });
+
+  // Timeline list
+  const sorted = [...filteredRows].sort((a,b) => b._date - a._date);
+  const list = document.getElementById('timeline-list');
+  if (!sorted.length) { list.innerHTML = '<div class="empty">ไม่มีรายการในช่วงนี้</div>'; return; }
+  list.innerHTML = sorted.map(r => `
+    <div class="timeline-item">
+      <div class="tl-date">${fmtDate(r._date)}</div>
+      <div class="tl-cat"><span style="font-size:16px">${(CAT_LABELS[r.category]||'📦').split(' ')[0]}</span></div>
+      <div class="tl-desc">
+        ${r.counterparty||'ไม่ระบุ'}
+        <span class="tl-cat-tag" style="color:${CAT_COLORS[r.category]||'#555'}">${(CAT_LABELS[r.category]||'').replace(/^.+?\s/,'')}</span>
+      </div>
+      <div class="tl-amt">${fmt(r.amount)}</div>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════════════════════
+
+function fmt(n) {
+  return Number(n).toLocaleString('th-TH', {minimumFractionDigits:0, maximumFractionDigits:0});
+}
+function fmtDate(d) {
+  return d.toLocaleDateString('th-TH', {day:'2-digit',month:'short'});
+}
+function destroyChart(id) {
+  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TAB SWITCH
+// ═══════════════════════════════════════════════════════════════
+
+function switchTab(name, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('page-' + name).classList.add('active');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CHART.JS DEFAULTS
+// ═══════════════════════════════════════════════════════════════
+
+Chart.defaults.color = '#666';
+Chart.defaults.font.family = "'IBM Plex Sans Thai', sans-serif";
+
+// ═══════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════
+
+// Set default dates
+const now = new Date();
+const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+document.getElementById('dateFrom').value = firstDay.toISOString().split('T')[0];
+document.getElementById('dateTo').value = now.toISOString().split('T')[0];
+
+fetchData();
+// Auto-refresh every 5 minutes
+setInterval(fetchData, 5 * 60 * 1000);
+</script>
+</body>
+</html>
